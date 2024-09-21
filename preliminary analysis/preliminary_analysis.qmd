@@ -1,0 +1,45 @@
+---
+title: "preliminary analysis"
+format: html
+editor: visual
+---
+
+```{python import-python-libraries}
+import pandas as pd
+import numpy as np
+```
+
+```{python import-data}
+data = pd.read_csv("../data/Motor_Vehicle_Collisions_-_Crashes.csv", low_memory=False)
+```
+
+## Introduction
+
+### The Data Set
+This data set is publicly available online and can be found here ('https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data'). This data set contains all information regarding motor vehicle incidents in New York City based on the MV104-AN police report. This report is only required when there are injuries, casualties, or if the total cost of damages exceeds $1000. As a result, the data may not contain information about minor incidents like fender benders where there usually aren't injuries or a significant worth of damage.
+
+### Topic
+In this analysis, I want
+
+### Cleaning the Data
+
+Given our large data set, we have a lot of information that aren't relevant to what we're looking at. For example, we don't really need to know the exact coordinates of the crash site, the non-primary crash factors, the collision ID, nor the non-primary vehicle type codes. These factors are more so an identifier or trivial information, rather than important data. So let's remove them from our data. This cuts our original data size from 29 columns to 18 columns.
+
+```{python data-cleaning-bad-columns}
+newData = data.drop(['LATITUDE', 'LONGITUDE', 'CONTRIBUTING FACTOR VEHICLE 2', 'CONTRIBUTING FACTOR VEHICLE 3', 'CONTRIBUTING FACTOR VEHICLE 4', 'CONTRIBUTING FACTOR VEHICLE 5','COLLISION_ID', 'VEHICLE TYPE CODE 2', 'VEHICLE TYPE CODE 3', 'VEHICLE TYPE CODE 4', 'VEHICLE TYPE CODE 5'], axis=1)
+```
+
+In our remaining columns, there are some entries where there is no data. For example, we can't work with an entry if we don't know what the cause or the car type was, thus we must remove it. This reduces our data size from 2120518 rows to 2103294.
+
+```{python data-cleaning-bad-entries}
+newData = newData.dropna(subset=['CONTRIBUTING FACTOR VEHICLE 1', 'VEHICLE TYPE CODE 1'])
+newData = newData[newData['CONTRIBUTING FACTOR VEHICLE 1'] != 'Unspecified']
+newData = newData[newData['VEHICLE TYPE CODE 1'] != 'Unspecified']
+```
+
+```{python}
+testingData = newData.head(100)
+testingData = testingData.dropna(subset=['CONTRIBUTING FACTOR VEHICLE 1', 'VEHICLE TYPE CODE 1'])
+```
+
+### Exploring the Data
