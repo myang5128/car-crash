@@ -7,6 +7,8 @@ editor: visual
 ```{python import-python-libraries}
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 ```
 
 ```{python import-data}
@@ -29,17 +31,54 @@ Given our large data set, we have a lot of information that aren't relevant to w
 newData = data.drop(['LATITUDE', 'LONGITUDE', 'CONTRIBUTING FACTOR VEHICLE 2', 'CONTRIBUTING FACTOR VEHICLE 3', 'CONTRIBUTING FACTOR VEHICLE 4', 'CONTRIBUTING FACTOR VEHICLE 5','COLLISION_ID', 'VEHICLE TYPE CODE 2', 'VEHICLE TYPE CODE 3', 'VEHICLE TYPE CODE 4', 'VEHICLE TYPE CODE 5'], axis=1)
 ```
 
-In our remaining columns, there are some entries where there is no data. For example, we can't work with an entry if we don't know what the cause or the car type was, thus we must remove it. This reduces our data size from 2120518 rows to 2103294.
+In our remaining columns, there are some entries where there is no data. For example, we can't work with an entry if we don't know what the cause or the car type was, thus we must remove it. This reduces our data size from 2120518 rows to 1388180.
 
 ```{python data-cleaning-bad-entries}
 newData = newData.dropna(subset=['CONTRIBUTING FACTOR VEHICLE 1', 'VEHICLE TYPE CODE 1'])
 newData = newData[newData['CONTRIBUTING FACTOR VEHICLE 1'] != 'Unspecified']
 newData = newData[newData['VEHICLE TYPE CODE 1'] != 'Unspecified']
+newData = newData.dropna(subset=['CRASH TIME'])
+newData = newData[newData['CRASH TIME'] != 'Unspecified']
 ```
 
-```{python}
-testingData = newData.head(100)
-testingData = testingData.dropna(subset=['CONTRIBUTING FACTOR VEHICLE 1', 'VEHICLE TYPE CODE 1'])
+Lastly, we want to split our data into time of day. This will bump our total columns up to 19. As there is no universally accepted set of hours, I decided to split the days into four equal sections: day, midday, evening, and night.
+Day: 5:00 - 11:00
+Midday: 11:00 - 17:00
+Evening: 17:00 - 23:00
+Night: 23:00 - 5:00
+
+```{python split-data-into-time}
+def categorize_time(time):
+  if time >= pd.to_datetime('5:00').time() and time < pd.to_datetime('11:00').time():
+    return 'Day'
+  elif time >= pd.to_datetime('11:00').time() and time < pd.to_datetime('17:00').time():
+    return 'Midday'
+  elif time >= pd.to_datetime('17:00').time() and time < pd.to_datetime('23:00').time():
+    return 'Evening'
+  else:
+    return 'Night'
+  
+newData['CRASH TIME'] = pd.to_datetime(newData['CRASH TIME'], format='%H:%M').dt.time
+  
+newData['TIME OF DAY'] = newData['CRASH TIME'].apply(categorize_time)
 ```
+
+```{python creating-the-two-datasets}
+day_data = newData[newData['TIME OF DAY'] == 'Day']
+midday_data = newData[newData['TIME OF DAY'] == 'Midday']
+evening_data = newData[newData['TIME OF DAY'] == 'Evening']
+night_data = newData[newData['TIME OF DAY'] == 'Night']
+
+day_df = pd.DataFrame(day_data)
+midday_df = pd.DataFrame(midday_data)
+evening_df = pd.DataFrame(evening_data)
+night_df = pd.DataFrame(night_data)
+
+day_df.to_csv('../data/Day_Time_Crashes.csv')
+midday_df.to_csv('../data/Midday_Time_Crashes.csv')
+evening_df.to_csv('../data/Evening_Time_Crashes.csv')
+night_df.to_csv('../data/Night_Time_Crashes.csv')
+```
+
 
 ### Exploring the Data
