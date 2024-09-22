@@ -63,6 +63,11 @@ newData['CRASH TIME'] = pd.to_datetime(newData['CRASH TIME'], format='%H:%M').dt
 newData['TIME OF DAY'] = newData['CRASH TIME'].apply(categorize_time)
 ```
 
+```{python save-new-data}
+newData.to_csv('../data/Cleaned_Crash_Data.csv')
+```
+
+
 ```{python creating-the-two-datasets}
 day_data = newData[newData['TIME OF DAY'] == 'Day']
 midday_data = newData[newData['TIME OF DAY'] == 'Midday']
@@ -79,6 +84,121 @@ midday_df.to_csv('../data/Midday_Time_Crashes.csv')
 evening_df.to_csv('../data/Evening_Time_Crashes.csv')
 night_df.to_csv('../data/Night_Time_Crashes.csv')
 ```
+
+```{python import day-time-data-sets}
+day_data = pd.read_csv('../data/Day_Time_Crashes.csv', low_memory=False)
+midday_data = pd.read_csv('../data/Midday_Time_Crashes.csv', low_memory=False)
+evening_data = pd.read_csv('../data/Evening_Time_Crashes.csv', low_memory=False)
+night_data = pd.read_csv('../data/Night_Time_Crashes.csv', low_memory=False)
+```
+
+```{python time-differences}
+day_num, midday_num, evening_num, night_num = len(day_data), len(midday_data), len(evening_data), len(night_data)
+
+time_data = pd.DataFrame({
+  'Time of Day': ['Day (5AM-11AM)', 'Midday (11AM-5PM)', 'Evening (5PM-11PM)', 'Night (11PM-5AM)'],
+  'Number of Incidents': [day_num, midday_num, evening_num, night_num]
+})
+
+sns.barplot(x = 'Time of Day', y = 'Number of Incidents', data = time_data, palette = 'Set1')
+
+plt.title('Number of Motor Vehicle Incidents by Time of Day')
+plt.xlabel('Time of Day')
+plt.xticks(rotation = 45)
+plt.ylabel('Number of Incidents')
+
+plt.tight_layout()
+
+plt.savefig("../figures/incidents_by_time_of_day.png", format='png')
+
+plt.show()
+plt.clf()
+```
+
+```{python time-differences-damage}
+day_injuries = day_data[['NUMBER OF PERSONS INJURED', 
+                          'NUMBER OF PEDESTRIANS INJURED', 
+                          'NUMBER OF CYCLIST INJURED', 
+                          'NUMBER OF MOTORIST INJURED']].sum().sum()
+
+day_deaths = day_data[['NUMBER OF PERSONS KILLED', 
+                        'NUMBER OF PEDESTRIANS KILLED', 
+                        'NUMBER OF CYCLIST KILLED', 
+                        'NUMBER OF MOTORIST KILLED']].sum().sum()
+                        
+midday_injuries = midday_data[['NUMBER OF PERSONS INJURED', 
+                          'NUMBER OF PEDESTRIANS INJURED', 
+                          'NUMBER OF CYCLIST INJURED', 
+                          'NUMBER OF MOTORIST INJURED']].sum().sum()
+
+midday_deaths = midday_data[['NUMBER OF PERSONS KILLED', 
+                        'NUMBER OF PEDESTRIANS KILLED', 
+                        'NUMBER OF CYCLIST KILLED', 
+                        'NUMBER OF MOTORIST KILLED']].sum().sum()
+                        
+evening_injuries = evening_data[['NUMBER OF PERSONS INJURED', 
+                          'NUMBER OF PEDESTRIANS INJURED', 
+                          'NUMBER OF CYCLIST INJURED', 
+                          'NUMBER OF MOTORIST INJURED']].sum().sum()
+
+evening_deaths = evening_data[['NUMBER OF PERSONS KILLED', 
+                        'NUMBER OF PEDESTRIANS KILLED', 
+                        'NUMBER OF CYCLIST KILLED', 
+                        'NUMBER OF MOTORIST KILLED']].sum().sum()
+                        
+night_injuries = night_data[['NUMBER OF PERSONS INJURED', 
+                          'NUMBER OF PEDESTRIANS INJURED', 
+                          'NUMBER OF CYCLIST INJURED', 
+                          'NUMBER OF MOTORIST INJURED']].sum().sum()
+
+night_deaths = night_data[['NUMBER OF PERSONS KILLED', 
+                        'NUMBER OF PEDESTRIANS KILLED', 
+                        'NUMBER OF CYCLIST KILLED', 
+                        'NUMBER OF MOTORIST KILLED']].sum().sum()
+
+injuries_data = pd.DataFrame({
+    'Time of Day': ['Day Injuries', 'Midday Injuries', 'Evening Injuries', 'Night Injuries'],
+    'Number of Incidents': [day_injuries, midday_injuries, evening_injuries, night_injuries]
+})
+
+death_data = pd.DataFrame({
+  'Time of Day': ['Day Deaths', 'Midday Deaths', 'Evening Deaths', 'Night Deaths'],
+  'Number of Deaths': [day_deaths, midday_deaths, evening_deaths, night_deaths]
+})
+```
+
+```{python time-differences-damage-graphs-1}
+sns.barplot(x = 'Time of Day', y = 'Number of Incidents', data = injuries_data, palette = 'Set1')
+
+plt.title('Number of Injuries by Time of Day')
+plt.xlabel('Time of Day')
+plt.xticks(rotation=45)
+plt.ylabel('Number of Injuries')
+
+plt.tight_layout()
+plt.savefig("../figures/injuries_by_time_of_day.png", format='png')
+plt.show()
+plt.clf()
+```
+
+```{python time-differences-damage-graphs-2}
+sns.barplot(x = 'Time of Day', y = 'Number of Deaths', data = death_data, palette = 'Set1')
+
+plt.title('Number of Deaths by Time of Day')
+plt.xlabel('Time of Day')
+plt.xticks(rotation=45)
+plt.ylabel('Number of Deaths')
+
+plt.tight_layout()
+plt.savefig("../figures/death_by_time_of_day.png", format='png')
+plt.show()
+plt.clf()
+```
+
+
+
+We can see that from our cleaned data, most of the incidents reported happened during 11AM and 5PM. This
+
 
 
 ### Exploring the Data
