@@ -1,0 +1,208 @@
+---
+title: "Preliminary Analysis"
+format: html
+editor: visual
+---
+
+```{python import-python-libraries}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+```{r}
+#| echo: false
+library(reticulate)
+```
+
+
+```{python import-data, eval=FALSE}
+#| echo: false
+data = pd.read_csv("../data/Motor_Vehicle_Collisions_-_Crashes.csv", low_memory=False)
+```
+
+## Introduction
+
+### The Data Set
+This data set is publicly available online and can be found here ('https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data'). This data set contains all information regarding motor vehicle incidents in New York City based on the MV104-AN police report. This report is only required when there are injuries, casualties, or if the total cost of damages exceeds $1000. As a result, the data may not contain information about minor incidents like fender benders where there usually aren't injuries or a significant worth of damage.
+
+### Topic
+
+### Cleaning the Data
+
+Given our large data set, we have a lot of information that aren't relevant to what we're looking at. For example, we don't really need to know the exact coordinates of the crash site, the non-primary crash factors, the collision ID, nor the non-primary vehicle type codes. These factors are more so an identifier or trivial information, rather than important data. So let's remove them from our data. This cuts our original data size from 29 columns to 18 columns.
+
+```{python data-cleaning-bad-columns, eval=FALSE}
+#| echo: false
+newData = data.drop(['LATITUDE', 'LONGITUDE', 'CONTRIBUTING FACTOR VEHICLE 2', 'CONTRIBUTING FACTOR VEHICLE 3', 'CONTRIBUTING FACTOR VEHICLE 4', 'CONTRIBUTING FACTOR VEHICLE 5','COLLISION_ID', 'VEHICLE TYPE CODE 2', 'VEHICLE TYPE CODE 3', 'VEHICLE TYPE CODE 4', 'VEHICLE TYPE CODE 5'], axis=1)
+```
+
+In our remaining columns, there are some entries where there is no data. For example, we can't work with an entry if we don't know what the cause or the car type was, thus we must remove it. This reduces our data size from 2120518 rows to 1388180.
+
+```{python data-cleaning-bad-entries, eval=FALSE}
+#| echo: false
+newData = newData.dropna(subset=['CONTRIBUTING FACTOR VEHICLE 1', 'VEHICLE TYPE CODE 1'])
+newData = newData[newData['CONTRIBUTING FACTOR VEHICLE 1'] != 'Unspecified']
+newData = newData[newData['VEHICLE TYPE CODE 1'] != 'Unspecified']
+newData = newData.dropna(subset=['CRASH TIME'])
+newData = newData[newData['CRASH TIME'] != 'Unspecified']
+```
+
+Lastly, we want to split our data into time of day. This will bump our total columns up to 19. As there is no universally accepted set of hours, I decided to split the days into four equal sections: day, midday, evening, and night.
+Day: 5:00 - 11:00
+Midday: 11:00 - 17:00
+Evening: 17:00 - 23:00
+Night: 23:00 - 5:00
+
+```{python split-data-into-time, eval=FALSE}
+#| echo: false
+def categorize_time(time):
+  if time >= pd.to_datetime('5:00').time() and time < pd.to_datetime('11:00').time():
+    return 'Day'
+  elif time >= pd.to_datetime('11:00').time() and time < pd.to_datetime('17:00').time():
+    return 'Midday'
+  elif time >= pd.to_datetime('17:00').time() and time < pd.to_datetime('23:00').time():
+    return 'Evening'
+  else:
+    return 'Night'
+  
+newData['CRASH TIME'] = pd.to_datetime(newData['CRASH TIME'], format='%H:%M').dt.time
+  
+newData['TIME OF DAY'] = newData['CRASH TIME'].apply(categorize_time)
+```
+
+```{python save-new-data-if-necessary, eval=FALSE}
+#| echo: false
+newData.to_csv('../data/Cleaned_Crash_Data.csv')
+```
+
+```{python import-new-data-if-necessary}
+#| echo: false
+newData = pd.read_csv('../data/Cleaned_Crash_Data.csv', low_memory = False)
+```
+
+
+```{python creating-the-two-datasets, eval=FALSE}
+#| echo: false
+day_data = newData[newData['TIME OF DAY'] == 'Day']
+midday_data = newData[newData['TIME OF DAY'] == 'Midday']
+evening_data = newData[newData['TIME OF DAY'] == 'Evening']
+night_data = newData[newData['TIME OF DAY'] == 'Night']
+
+day_df = pd.DataFrame(day_data)
+midday_df = pd.DataFrame(midday_data)
+evening_df = pd.DataFrame(evening_data)
+night_df = pd.DataFrame(night_data)
+
+day_df.to_csv('../data/Day_Time_Crashes.csv')
+midday_df.to_csv('../data/Midday_Time_Crashes.csv')
+evening_df.to_csv('../data/Evening_Time_Crashes.csv')
+night_df.to_csv('../data/Night_Time_Crashes.csv')
+```
+
+```{python import day-time-data-sets}
+#| echo: false
+day_data = pd.read_csv('../data/Day_Time_Crashes.csv', low_memory=False)
+midday_data = pd.read_csv('../data/Midday_Time_Crashes.csv', low_memory=False)
+evening_data = pd.read_csv('../data/Evening_Time_Crashes.csv', low_memory=False)
+night_data = pd.read_csv('../data/Night_Time_Crashes.csv', low_memory=False)
+```
+
+```{python time-differences}
+#| echo: false
+plt.close()
+day_num, midday_num, evening_num, night_num = len(day_data), len(midday_data), len(evening_data), len(night_data)
+
+time_data = pd.DataFrame({
+  'Time of Day': ['Day (5AM-11AM)', 'Midday (11AM-5PM)', 'Evening (5PM-11PM)', 'Night (11PM-5AM)'],
+  'Number of Incidents': [day_num, midday_num, evening_num, night_num]
+})
+
+_ = sns.barplot(x = 'Time of Day', y = 'Number of Incidents', data = time_data, palette = 'Set1', hue='Time of Day', legend=False)
+_ = plt.title('Number of Motor Vehicle Incidents by Time of Day')
+_ = plt.xlabel('Time of Day')
+_ = plt.xticks(rotation = 45)
+_ = plt.ylabel('Number of Incidents')
+
+
+plt.tight_layout()
+plt.savefig("../figures/incidents_by_time_of_day.png", format='png')
+
+plt.close()
+```
+
+```{python time-differences-damage}
+#| echo: false
+day_injuries = day_data['NUMBER OF PERSONS INJURED'].sum()
+
+day_deaths = day_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+midday_injuries = midday_data['NUMBER OF PERSONS INJURED'].sum()
+
+midday_deaths = midday_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+evening_injuries = evening_data['NUMBER OF PERSONS INJURED'].sum()
+
+evening_deaths = evening_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+night_injuries = night_data['NUMBER OF PERSONS INJURED'].sum()
+
+night_deaths = night_data['NUMBER OF PERSONS KILLED'].sum()
+
+injuries_data = pd.DataFrame({
+    'Time of Day': ['Day Injuries', 'Midday Injuries', 'Evening Injuries', 'Night Injuries'],
+    'Number of Incidents': [day_injuries, midday_injuries, evening_injuries, night_injuries]
+})
+
+death_data = pd.DataFrame({
+  'Time of Day': ['Day Deaths', 'Midday Deaths', 'Evening Deaths', 'Night Deaths'],
+  'Number of Deaths': [day_deaths, midday_deaths, evening_deaths, night_deaths]
+})
+```
+
+```{python time-differences-injured-graph}
+#| echo: false
+
+plt.close()
+
+_ = sns.barplot(x='Time of Day', y='Number of Incidents', data=injuries_data, palette='Set1', hue='Time of Day', legend=False)
+_ = plt.title('Number of Injuries by Time of Day')
+_ = plt.xlabel('Time of Day')
+_ = plt.xticks(rotation=45)
+_ = plt.ylabel('Number of Injuries')
+
+plt.tight_layout()
+plt.savefig("../figures/injuries_by_time_of_day.png", format='png')
+
+plt.close()
+```
+
+```{python time-differences-death-graph}
+#| echo: false
+
+plt.close()
+
+_ = sns.barplot(x = 'Time of Day', y = 'Number of Deaths', data = death_data, palette = 'Set1', hue='Time of Day', legend=False)
+_ = plt.title('Number of Deaths by Time of Day')
+_ = plt.xlabel('Time of Day')
+_ = plt.xticks(rotation=45)
+_ = plt.ylabel('Number of Deaths')
+
+plt.tight_layout()
+plt.savefig("../figures/death_by_time_of_day.png", format='png')
+
+plt.close()
+```
+
+```{python show-numbers}
+#| echo: false
+print(f'5AM - 11AM = Number of Incidents: {day_num}, Number of Injuries: {day_injuries}, Number of Deaths: {day_deaths}')
+print(f'11AM - 5PM = Number of Incidents: {midday_num}, Number of Injuries: {midday_injuries}, Number of Deaths: {midday_deaths}')
+print(f'5PM - 11PM = Number of Incidents: {evening_num}, Number of Injuries: {evening_injuries}, Number of Deaths: {evening_deaths}')
+print(f'11PM - 5AM = Number of Incidents: {night_num}, Number of Injuries: {night_injuries}, Number of Deaths: {night_deaths}')
+```
+
+We can see from our graph that most of the incidents happen during 11AM - 5PM, followed by 5PM - 11PM. This makes sense as this is the time where the roads are the most busiest with people driving home from work and headed to places. As a result, the chances of a motor vehicle incident happening is also the highest. From 5AM - 11AM, thee were 310213 incidents, 189155 injuries, and 906 deaths. From 11AM - 5PM, there were a total of 506320 incidents, 310821 people injured, and 919 deaths. From 5PM - 11PM, there were 404867 incidents, 302945 injuries, and 1157 deaths. Lastly, from 11PM - 5AM, there were 166780 incidents, 139128 injuries, and 1261 deaths. While midday and evening had the most number of incidents, night time actually had the most highest count of injuries and deaths proportionate to the number of incidents. From 166780 incidents, 139128 people were injured and 1261 people were killed. For such a relatively low number of incidents, more people were injured or killed. This can be for a number of reasons. The type of incidents that occur at night time are more severe or there could be more people traveling in a single motor vehicle. So while midday and evening had the most incidents, night time's incidents were more severe proportion-wise.
+
