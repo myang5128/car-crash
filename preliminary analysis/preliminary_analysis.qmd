@@ -1,7 +1,9 @@
 ---
-title: "Preliminary Analysis"
-format: pdf
+title: "Preliminary Analysis of NYC Car Crashes"
+author: "Michael Yang"
+format: html
 editor: visual
+self-contained: true
 ---
 
 ```{python import-python-libraries}
@@ -10,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from IPython.display import Image, display
 ```
 
 ```{r import-r-libraries}
@@ -17,36 +20,102 @@ import seaborn as sns
 library(reticulate)
 ```
 
-## Introduction 
+## Introduction
 
 ### The Data Set
-This data set is publicly available online and can be found here ('https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data'). This data set contains all information regarding motor vehicle incidents in New York City based on the MV104-AN police report. This report is only required when there are injuries, casualties, or if the total cost of damages exceeds $1000. As a result, the data may not contain information about minor incidents like fender benders where there usually aren't injuries or a significant worth of damage.
+
+This data set is publicly available online and can be found here ('https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data'). This data set contains all information regarding motor vehicle incidents in New York City based on the MV104-AN police report from January 1, 2013 to December 31, 2023. This report is only required when there are injuries, casualties, or if the total cost of damages exceeds \$1000. As a result, the data may not contain information about minor incidents like fender benders where there usually aren't injuries or a significant worth of damage.
 
 ### The Question
+
 The purpose of this analysis is to show the relationship between several factors that cause car crashes in New York City. There are many factors that can affect the severity of vehicle incidents like location and the time of day.If we could find a common factor in deadly incidents, we then could focus proactive efforts in preventing or limiting said incidents. New York City is one of the largest metropolitan areas and has millions of drivers. We need to be able to ensure safety for those motorists, their passengers, and pedestrians.
+
 
 ## Data Preparation
 
 ### Prepping the Data
+
 The original data set at the time of retrieval (September 22, 2024) contained more than 2 million entries and 29 columns. These columns include crash information like the number of people killed or injured, the location, the date, and more. However, to simplify the data set that we're working with, we want to eliminate some redundant information. We got rid of all the columns that did not provide more insight on the incident or factors leading to it. We need to also make sure that our data set contains entries that have their information available, i.e. their columns are not unknown or missing. Another factor that we want to consider is the time of day (morning, midday, evening, and night). To do this (and to not constantly refer back to the time of the crash), we want to create a new variable that contains the time of day based on when the crash happened. Since there is no universally accepted time frame, we decided to split the day into four equal sections. Morning would be from 5AM to 11AM, midday would be from 11AM to 5PM, evening would be from 5PM to 11PM, and night would be from 11PM to 5AM. After both the cleaning and adding to our new data set, we have about 1.3 million entries with 19 columns each.
 
 ### Columns
-CRASH DATE - Describes the date that the incident happened. (MM/DD/YYYY)
-CRASH TIME - Describes the time that the incident happened. (HH:MM:SS)
-BOROUGH - Describes the borough where the incident happened if applicable.
-ZIP CODE - Describes the borough zip code where the incident happened if applicable.
-LOCATION - Describes the longitude and latitude where the incident happened if known.
-ON STREET NAME - Describes the street where the incident happened if applicable.
-CROSS STREET NAME - Describes the intersecting street where the incident happened if applicable.
-OFF STREET NAME - Describes the nearby street where the incident happened if it did not occur on a street.
-NUMBER OF PERSONS INJURED - Total number of people injured in incident.
-NUMBER OF PERSONS KILLED - Total number of people killed in incident.
-NUMBER OF PEDESTRIANS INJURED - Total number of pedestrians injured in incident.
-NUMBER OF PEDESTRIANS KILLED - Total number of pedestrians injured in incident.
-NUMBER OF CYCLIST INJUIRED - Total number of cyclists injured in incident.
-NUMBER OF CYCLIST KILLED - Total number of cyclists injured in incident.
-NUMBER OF MOTORIST INJURED - Total number of motorists injured in incident.
-NUMBER OF MOTORIST KILLED - Total number of motorists injured in incident.
-CONTRIBUTING FACTOR VEHICLE 1 - Describes the primary reason of the incident.
-VEHICLE TYPE CODE 1 - Describes the primary car type in the incident.
-TIME OF DAY - The time segment of when the incident happened.
+
+**CRASH DATE**: Describes the date that the incident happened. (MM/DD/YYYY)\
+**CRASH TIME**: Describes the time that the incident happened. (HH:MM:SS)\
+**BOROUGH**: Describes the borough where the incident happened if applicable.\
+**ZIP CODE**: Describes the borough zip code where the incident happened if applicable.\
+**LOCATION**: Describes the longitude and latitude where the incident happened if known.\
+**ON STREET NAME**: Describes the street where the incident happened if applicable.\
+**CROSS STREET NAME**: Describes the intersecting street where the incident happened if applicable.\
+**OFF STREET NAME**: Describes the nearby street where the incident happened if it did not occur on a street.\
+**NUMBER OF PERSONS INJURED**: Total number of people injured in incident.\
+**NUMBER OF PERSONS KILLED**: Total number of people killed in incident.\
+**NUMBER OF PEDESTRIANS INJURED**: Total number of pedestrians injured in incident.\
+**NUMBER OF PEDESTRIANS KILLED**: Total number of pedestrians killed in incident.\
+**NUMBER OF CYCLIST INJURED**: Total number of cyclists injured in incident.\
+**NUMBER OF CYCLIST KILLED**: Total number of cyclists killed in incident.\
+**NUMBER OF MOTORIST INJURED**: Total number of motorists injured in incident.\
+**NUMBER OF MOTORIST KILLED**: Total number of motorists killed in incident.\
+**CONTRIBUTING FACTOR VEHICLE 1**: Describes the primary reason for the incident.\
+**VEHICLE TYPE CODE 1**: Describes the primary car type in the incident.\
+**TIME OF DAY**: The time segment of when the incident happened.
+
+
+## Preliminary Analysis
+
+### Time of Day VS Incident Count
+
+![Number of Motor Vehicle Incidents by Time of Day](../figures/incidents_by_time_of_day.png) 
+
+In our graph, we see that there is a significantly larger number of incidents that occur during midday (11AM - 5PM) than the other time periods. This makes sense as people are commuting for lunch or leaving from work or running errands or other daily activities. As midday has the highest number of motorists, cyclists, and pedestrians, it is reasonable to say that midday would have the most number of incidents. The second highest is evening (5PM - 11PM) where people could be out on for night activities like driving home or walking to parties.The last two time periods, day (5AM - 11AM) and night (11PM - 5AM), have the least number of incidents as people are waking or headed to bed, and would most likely not be out during this time. We also want to acknowledge that most NYC residents and tourists do make use of public transportation but only methods like public buses are included in our findings. Below is a detailed oversight on the number of incidents found.
+
+```{python show-numbers}
+#| echo: false
+
+day_data = pd.read_csv('../data/Day_Time_Crashes.csv', low_memory=False)
+midday_data = pd.read_csv('../data/Midday_Time_Crashes.csv', low_memory=False)
+evening_data = pd.read_csv('../data/Evening_Time_Crashes.csv', low_memory=False)
+night_data = pd.read_csv('../data/Night_Time_Crashes.csv', low_memory=False)
+
+day_num, midday_num, evening_num, night_num = len(day_data), len(midday_data), len(evening_data), len(night_data)
+
+day_injuries = day_data['NUMBER OF PERSONS INJURED'].sum()
+day_deaths = day_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+midday_injuries = midday_data['NUMBER OF PERSONS INJURED'].sum()
+midday_deaths = midday_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+evening_injuries = evening_data['NUMBER OF PERSONS INJURED'].sum()
+evening_deaths = evening_data['NUMBER OF PERSONS KILLED'].sum()
+                        
+night_injuries = night_data['NUMBER OF PERSONS INJURED'].sum()
+night_deaths = night_data['NUMBER OF PERSONS KILLED'].sum()
+
+
+print('Morning 5AM - 11AM:')
+print(f'Number of Incidents: {day_num}, Number of Injuries: {day_injuries}, Number of Deaths: {day_deaths}')
+print('------------------------')
+
+print(f'Midday 11AM - 5PM:')
+print(f'Number of Incidents: {midday_num}, Number of Injuries: {midday_injuries}, Number of Deaths: {midday_deaths}')
+print('------------------------')
+
+print(f'Evening 5PM - 11PM:')
+print(f'Number of Incidents: {evening_num}, Number of Injuries: {evening_injuries}, Number of Deaths: {evening_deaths}')
+print('------------------------')
+
+print(f'Night 11PM - 5AM:')
+print(f'Number of Incidents: {night_num}, Number of Injuries: {night_injuries}, Number of Deaths: {night_deaths}')
+```
+
+
+While midday has the highest number of incidents, there's actually a disproportionate number of death compared to the number of injuries. If we compare midday and night, we see that there were about 500,000 incidents that occurred during midday but only about 167,000 incidents in the night time. While midday has about triple the amount of incidents that night time has and double the number of total injuries, night time actually has the largest number of total deaths. In the graphs below, we can see how the injuries and death count varies throughout the day. 
+
+![Number of Motor Vehicle Injuries by Time of Day](../figures/injuries_by_time_of_day.png) 
+
+
+![Number of Motor Vehicle Deaths by Time of Day](../figures/death_by_time_of_day.png)
+
+In our injuries graph, we see a similar layout as our incident graph. But, when we look at the deaths graph, we see a different story. As the day goes on, the death count rises. There are a few points that can be concluded from the data. First, we know that midday and evening have the highest numbers of incidents and injuries, yet not the highest number of death. This shows that the type of incidents that happen during these times are relatively less life-threatening. Secondly, night time has the highest death count but the smallest incident count. This shows that while there may not be a lot of people on the road, the incidents that occur at night are more dangerous and potentially fatal. Third, despite not being the highest in any categories, evening has the highest rate of an incident being harmful or fatal. It has 100,000 less incidents than midday, but almost the same amount of incidents and a higher death count. This could mean that the type of incidents that occur during the evening involves more people, whether it be a vehicle with several passengers or several pedestrians being involved. Next, let's look at the type of incidents and if there is a relation between the incident type and the time of day.
+
+
+### Incidents
