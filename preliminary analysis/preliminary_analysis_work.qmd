@@ -89,7 +89,7 @@ evening_data = pd.read_csv('../data/Evening_Time_Crashes.csv', low_memory=False)
 night_data = pd.read_csv('../data/Night_Time_Crashes.csv', low_memory=False)
 ```
 
-```{python time-differences}
+```{python time-differences, eval=FALSE}
 #| echo: false
 plt.close()
 day_num, midday_num, evening_num, night_num = len(day_data), len(midday_data), len(evening_data), len(night_data)
@@ -141,7 +141,7 @@ death_data = pd.DataFrame({
 })
 ```
 
-```{python time-differences-injured-graph}
+```{python time-differences-injured-graph, eval=FALSE}
 #| echo: false
 
 plt.close()
@@ -158,7 +158,7 @@ plt.savefig("../figures/injuries_by_time_of_day.png", format='png')
 plt.close()
 ```
 
-```{python time-differences-death-graph}
+```{python time-differences-death-graph, eval=FALSE}
 #| echo: false
 
 plt.close()
@@ -181,6 +181,31 @@ print(f'5AM - 11AM = Number of Incidents: {day_num}, Number of Injuries: {day_in
 print(f'11AM - 5PM = Number of Incidents: {midday_num}, Number of Injuries: {midday_injuries}, Number of Deaths: {midday_deaths}')
 print(f'5PM - 11PM = Number of Incidents: {evening_num}, Number of Injuries: {evening_injuries}, Number of Deaths: {evening_deaths}')
 print(f'11PM - 5AM = Number of Incidents: {night_num}, Number of Injuries: {night_injuries}, Number of Deaths: {night_deaths}')
+```
+```{python incident-types}
+newData['CONTRIBUTING FACTOR VEHICLE 1'] = newData['CONTRIBUTING FACTOR VEHICLE 1'].str.upper()
+incident_type = list(newData['CONTRIBUTING FACTOR VEHICLE 1'].unique())
+incident_type.remove('80')
+incident_type.remove('1')
+print(f'There are {len(incident_type)} unique incident contributing factors')
+print(incident_type)
+
+num_incident = {}
+for incident in incident_type:
+  newDict = {}
+  curData = newData[newData['CONTRIBUTING FACTOR VEHICLE 1'] == incident]
+  total_incidents = len(curData)
+  newDict['Total Accidents'] = total_incidents
+  
+  total_injuries = curData['NUMBER OF PERSONS INJURED'].sum()
+  newDict['Total Injuries'] = total_injuries
+  
+  total_deaths = curData['NUMBER OF PERSONS KILLED'].sum()
+  newDict['Total Deaths'] = total_deaths
+  
+  num_incident[incident] = newDict
+  
+print(num_incident)
 ```
 
 
