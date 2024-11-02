@@ -182,13 +182,14 @@ print(f'11AM - 5PM = Number of Incidents: {midday_num}, Number of Injuries: {mid
 print(f'5PM - 11PM = Number of Incidents: {evening_num}, Number of Injuries: {evening_injuries}, Number of Deaths: {evening_deaths}')
 print(f'11PM - 5AM = Number of Incidents: {night_num}, Number of Injuries: {night_injuries}, Number of Deaths: {night_deaths}')
 ```
+
 ```{python incident-types}
 newData['CONTRIBUTING FACTOR VEHICLE 1'] = newData['CONTRIBUTING FACTOR VEHICLE 1'].str.upper()
 incident_type = list(newData['CONTRIBUTING FACTOR VEHICLE 1'].unique())
 incident_type.remove('80')
 incident_type.remove('1')
 print(f'There are {len(incident_type)} unique incident contributing factors')
-print(incident_type)
+#print(incident_type)
 
 num_incident = {}
 for incident in incident_type:
@@ -203,9 +204,111 @@ for incident in incident_type:
   total_deaths = curData['NUMBER OF PERSONS KILLED'].sum()
   newDict['Total Deaths'] = total_deaths
   
-  num_incident[incident] = newDict
-  
-print(num_incident)
+  num_incident[incident.lower().title()] = newDict
+
+num_incident_df = pd.DataFrame.from_dict(num_incident, orient='index')
+num_incident_df.to_csv('../data/Incident_Types.csv')
+#print(num_incident)
 ```
+
+```{python most-incidents}
+most_incident = dict(sorted(num_incident.items(), key = lambda x: x[1]['Total Accidents'], reverse=True))
+print('Incidents By Total Occurrence')
+print('-----------------------')
+index = 1
+most_incident_data = {}
+for incident, numbers in most_incident.items():
+  number = numbers["Total Accidents"]
+  #print(f'{index}: {incident}, Total Accidents: {number}')
+  index += 1
+  most_incident_data[incident] = number
+```
+
+```{python most-incidents-graph}
+most_common_incident_data = dict(list(most_incident_data.items())[:10])
+most_common_incident_data = pd.DataFrame.from_dict(most_common_incident_data, orient='index').reset_index()
+most_common_incident_data.columns = ['Incident Type', 'Total Accidents']
+plt.close()
+
+_ = sns.barplot(y = 'Incident Type', x = 'Total Accidents', data = most_common_incident_data, palette = 'Set1', hue='Incident Type', legend=False)
+_ = plt.title('Most Common Incident Reasons')
+_ = plt.ylabel('Incident Type')
+_ = plt.xticks(rotation=45)
+_ = plt.xlabel('Total Occurrences')
+
+plt.tight_layout()
+plt.savefig("../figures/most_common_incident_type_by_count.png", format='png')
+plt.show()
+
+plt.close()
+```
+
+```{python most-injuries}
+most_injuries = dict(sorted(num_incident.items(), key = lambda x: x[1]['Total Injuries'], reverse=True))
+print('Incidents By Total Injuries')
+print('-----------------------')
+index = 1
+most_injuries_data = {}
+for incident, numbers in most_injuries.items():
+  number = numbers["Total Injuries"]
+  #print(f'{index}: {incident}, Total Injuries: {number}')
+  most_injuries_data[incident] = number
+  index += 1
+```
+
+```{python most-injuries-graph}
+most_common_injuries_data = dict(list(most_injuries_data.items())[:10])
+most_common_injuries_data = pd.DataFrame.from_dict(most_common_injuries_data, orient='index').reset_index()
+most_common_injuries_data.columns = ['Incident Type', 'Total Injuries']
+plt.close()
+
+_ = sns.barplot(y = 'Incident Type', x = 'Total Injuries', data = most_common_injuries_data, palette = 'Set1', hue='Incident Type', legend=False)
+_ = plt.title('Most Common Injury-Causing Incidents')
+_ = plt.ylabel('Incident Type')
+_ = plt.xticks(rotation=45)
+_ = plt.xlabel('Total Injuries')
+
+plt.tight_layout()
+plt.savefig("../figures/most_common_incident_type_by_injuries.png", format='png')
+plt.show()
+
+plt.close()
+```
+
+```{python most-deaths}
+most_deaths = dict(sorted(num_incident.items(), key = lambda x: x[1]['Total Deaths'], reverse=True))
+print('Incidents By Total Deaths')
+print('-----------------------')
+index = 1
+most_deaths_data = {}
+for incident, numbers in most_deaths.items():
+  number = numbers["Total Deaths"]
+  #print(f'{index}: {incident}, Total Deaths: {number}')
+  most_deaths_data[incident] = number
+  index += 1
+```
+
+```{python most-deaths-graph}
+most_common_deaths_data = dict(list(most_deaths_data.items())[:10])
+most_common_deaths_data = pd.DataFrame.from_dict(most_common_deaths_data, orient='index').reset_index()
+most_common_deaths_data.columns = ['Incident Type', 'Total Deaths']
+plt.close()
+
+ylabels = ['Unsafe Speed', 'Driver Inattention/Distraction', 'Traffic Control Disregarded', 'Failure to Yield Right-Of-Way', 'Alcohol Involvement', 'Pedestrian/Bicyclist Error/Confusion', 'Driver Inexperience', 'Illness', 'Lost Consciousness', 'Passenger Distraction']
+
+_ = sns.barplot(y = 'Incident Type', x = 'Total Deaths', data = most_common_deaths_data, palette = 'Set1', hue='Incident Type', legend=False)
+_ = plt.title('Most Common Death-Causing Incidents')
+_ = plt.ylabel('Incident Type')
+_ = plt.yticks(ticks = range(len(ylabels)), labels = ylabels)
+_ = plt.xticks(rotation=45)
+_ = plt.xlabel('Total Deaths')
+
+plt.tight_layout()
+plt.savefig("../figures/most_common_incident_type_by_deaths.png", format='png')
+plt.show()
+
+plt.close()
+```
+
 
 
